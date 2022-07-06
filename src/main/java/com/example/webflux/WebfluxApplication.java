@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -13,6 +14,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 @Slf4j
+@EnableAsync
 @RestController
 @SpringBootApplication
 public class WebfluxApplication {
@@ -24,6 +26,8 @@ public class WebfluxApplication {
     MyService myService;
 
     public static void main(String[] args) {
+        System.setProperty("reactor.ipc.netty.workerCount","1");
+        System.setProperty("reactor.ipc.netty.pool.maxConnections","2000");
         SpringApplication.run(WebfluxApplication.class, args);
     }
 
