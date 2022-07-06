@@ -31,7 +31,9 @@ public class WebfluxApplication {
     public Mono<String> rest(int idx) {
         Mono<String> body =
             client.get().uri(URL1, idx).exchangeToMono(clientResponse -> clientResponse.bodyToMono(String.class))
+                .doOnNext(s -> {log.info("test {}" , s);})
                 .flatMap(s -> client.get().uri(URL2, s).exchangeToMono(clientResponse -> clientResponse.bodyToMono(String.class)))
+                .doOnNext(s -> {log.info("test2 {}" , s);})
                 .flatMap(s -> Mono.fromCompletionStage(myService.work(s)));
         /*Mono<ClientResponse> responseMono = client.get().uri(URL1, idx).exchange();
         Mono<String> body = responseMono.flatMap(clientResponse -> clientResponse.bodyToMono(String.class));*/
@@ -44,7 +46,6 @@ public class WebfluxApplication {
 
         @Async
         public CompletableFuture<String> work(String req) {
-            log.info("work test");
             return CompletableFuture.completedFuture(req + "/asyncwork");
         }
     }
