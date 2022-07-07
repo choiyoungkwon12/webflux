@@ -34,10 +34,9 @@ public class WebfluxApplication {
     @GetMapping("/")
     Mono<String> hello() throws InterruptedException {
         log.info("pos1");
-        Mono<String> hello_webFlux = Mono.just(generateHello()).doOnNext(log::info).log();
-        Thread.sleep(1000);
+        Mono<String> m = Mono.fromSupplier(this::generateHello).doOnNext(log::info).log();
         log.info("pos2");
-        return hello_webFlux; // publisher -> publisher -> publisher -> subscriber
+        return m; // publisher -> publisher -> publisher -> subscriber
     }
 
     private String generateHello() {
