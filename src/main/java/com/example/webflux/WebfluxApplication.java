@@ -26,18 +26,36 @@ public class WebfluxApplication {
     MyService myService;
 
     public static void main(String[] args) {
-        System.setProperty("reactor.ipc.netty.workerCount","1");
-        System.setProperty("reactor.ipc.netty.pool.maxConnections","2000");
+        System.setProperty("reactor.ipc.netty.workerCount", "1");
+        System.setProperty("reactor.ipc.netty.pool.maxConnections", "2000");
         SpringApplication.run(WebfluxApplication.class, args);
+    }
+
+    @GetMapping("/")
+    Mono<String> hello() throws InterruptedException {
+        log.info("pos1");
+        Mono<String> hello_webFlux = Mono.just(generateHello()).doOnNext(log::info).log();
+        Thread.sleep(1000);
+        log.info("pos2");
+        return hello_webFlux; // publisher -> publisher -> publisher -> subscriber
+    }
+
+    private String generateHello() {
+        log.info("method generateHello()");
+        return "Hello";
     }
 
     @GetMapping("/rest")
     public Mono<String> rest(int idx) {
         Mono<String> body =
             client.get().uri(URL1, idx).exchangeToMono(clientResponse -> clientResponse.bodyToMono(String.class))
-                .doOnNext(s -> {log.info("test {}" , s);})
+                .doOnNext(s -> {
+                    log.info("test {}", s);
+                })
                 .flatMap(s -> client.get().uri(URL2, s).exchangeToMono(clientResponse -> clientResponse.bodyToMono(String.class)))
-                .doOnNext(s -> {log.info("test2 {}" , s);})
+                .doOnNext(s -> {
+                    log.info("test2 {}", s);
+                })
                 .flatMap(s -> Mono.fromCompletionStage(myService.work(s)));
         /*Mono<ClientResponse> responseMono = client.get().uri(URL1, idx).exchange();
         Mono<String> body = responseMono.flatMap(clientResponse -> clientResponse.bodyToMono(String.class));*/
