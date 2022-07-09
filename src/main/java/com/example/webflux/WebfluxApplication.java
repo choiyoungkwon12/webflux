@@ -85,16 +85,15 @@ public class WebfluxApplication {
     @GetMapping(value = "/events", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     Flux<Event> events() throws ExecutionException, InterruptedException {
         // 초기 상태와 그것을 이용해서 데이터를 계속 만들어내는 Flux
-        Flux<Event> es = Flux
-            .<Event, Long>generate(() -> 1L, (id, sink) -> {
-                sink.next(new Event(id, "value" + id));
-                return id + 1;
-            });
+        Flux<String> es = Flux
+            .generate(sink -> sink.next("value"));
 
         // 일정 간격으로 숫자를 만들어 내는 Flux
         Flux<Long> interval = Flux.interval(Duration.ofSeconds(1));
 
-        return Flux.zip(es, interval).map(tu -> tu.getT1());
+        return Flux.zip(es, interval).map(tu ->
+            new Event(tu.getT2(), tu.getT1() + tu.getT2())
+        ).take(10);
     }
 
     @Data
