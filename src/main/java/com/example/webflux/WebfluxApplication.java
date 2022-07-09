@@ -84,13 +84,17 @@ public class WebfluxApplication {
     // 2차적으로는 해당 컨트롤러가 어떤 미디어 타입으로 리턴해주는지도 사용할 수 있음.
     @GetMapping(value = "/events", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     Flux<Event> events() throws ExecutionException, InterruptedException {
-        return Flux
+        // 초기 상태와 그것을 이용해서 데이터를 계속 만들어내는 Flux
+        Flux<Event> es = Flux
             .<Event, Long>generate(() -> 1L, (id, sink) -> {
                 sink.next(new Event(id, "value" + id));
                 return id + 1;
-            })
-            .delayElements(Duration.ofMillis(500))
-            .take(10);
+            });
+
+        // 일정 간격으로 숫자를 만들어 내는 Flux
+        Flux<Long> interval = Flux.interval(Duration.ofSeconds(1));
+
+        return Flux.zip(es, interval).map(tu -> tu.getT1());
     }
 
     @Data
