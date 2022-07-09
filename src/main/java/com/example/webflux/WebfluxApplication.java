@@ -85,7 +85,10 @@ public class WebfluxApplication {
     @GetMapping(value = "/events", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     Flux<Event> events() throws ExecutionException, InterruptedException {
         return Flux
-            .<Event>generate(synchronousSink -> synchronousSink.next(new Event(System.currentTimeMillis(), "value")))
+            .<Event, Long>generate(() -> 1L, (id, sink) -> {
+                sink.next(new Event(id, "value" + id));
+                return id + 1;
+            })
             .delayElements(Duration.ofMillis(500))
             .take(10);
     }
