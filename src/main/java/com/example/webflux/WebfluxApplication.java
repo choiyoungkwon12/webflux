@@ -4,7 +4,6 @@ import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.stream.Stream;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -85,10 +84,10 @@ public class WebfluxApplication {
     // 2차적으로는 해당 컨트롤러가 어떤 미디어 타입으로 리턴해주는지도 사용할 수 있음.
     @GetMapping(value = "/events", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     Flux<Event> events() throws ExecutionException, InterruptedException {
-        Stream<Event> s = Stream.generate(() -> new Event(System.currentTimeMillis(), "value"));
         return Flux
-                .fromStream(s)
-                .delayElements(Duration.ofMillis(500)).take(10);
+            .<Event>generate(synchronousSink -> synchronousSink.next(new Event(System.currentTimeMillis(), "value")))
+            .delayElements(Duration.ofMillis(500))
+            .take(10);
     }
 
     @Data
