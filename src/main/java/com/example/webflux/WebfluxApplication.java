@@ -1,16 +1,25 @@
 package com.example.webflux;
 
+import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.stream.Stream;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.http.MediaType;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Slf4j
@@ -60,6 +69,34 @@ public class WebfluxApplication {
         Mono<String> body = responseMono.flatMap(clientResponse -> clientResponse.bodyToMono(String.class));*/
 
         return body;
+    }
+
+    @GetMapping("/event/{id}")
+    Mono<Event> event(@PathVariable long id) {
+        return Mono.just(new Event(id, "event " + id));
+    }
+
+    @GetMapping("/event2/{id}")
+    Mono<List<Event>> event2(@PathVariable long id) {
+        return Mono.just(List.of(new Event(1L, "event1"), new Event(2L, "event2")));
+    }
+
+    // produces는 1차적으로는 client가 요청을 보내준거에서 accept 헤더를 보고 mapping을 해주기 위한 것
+    // 2차적으로는 해당 컨트롤러가 어떤 미디어 타입으로 리턴해주는지도 사용할 수 있음.
+    @GetMapping(value = "/events", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    Flux<Event> events() throws ExecutionException, InterruptedException {
+        Stream<Event> s = Stream.generate(() -> new Event(System.currentTimeMillis(), "value"));
+        return Flux
+                .fromStream(s)
+                .delayElements(Duration.ofMillis(500)).take(10);
+    }
+
+    @Data
+    @AllArgsConstructor
+    public static class Event {
+
+        long id;
+        String value;
     }
 
     @Service
